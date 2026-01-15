@@ -1,5 +1,4 @@
-﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
@@ -11,6 +10,9 @@
             margin: 0;
             padding: 0;
             background-color: #f9f9f9;
+            /* Platz rechts für die Werbespalte auf größeren Bildschirmen */
+            padding-right: 220px;
+            box-sizing: border-box;
         }
         header {
             background-color: #87CEFA; /* LightSkyBlue */
@@ -45,6 +47,89 @@
             line-height: 1.6;
             font-size: 1.1em;
         }
+
+        /* --- Sidebar Werbung --- */
+        .ad-sidebar {
+            position: fixed;
+            top: 20px;
+            right: 10px;
+            width: 200px;
+            height: 400px;
+            background: transparent;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none; /* Verhindert, dass die Sidebar Klicks stört; setze auf auto, wenn Links benötigt werden */
+        }
+
+        .ad-container {
+            position: relative;
+            width: 200px;
+            height: 400px;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            background: #fff;
+            pointer-events: auto; /* Ermöglicht Interaktion, falls gewünscht */
+        }
+
+        .ad-image {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .ad-image.visible {
+            opacity: 1;
+        }
+
+        /* Indikatorleiste (kleine Punkte) */
+        .ad-indicators {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+
+        .ad-indicators button {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255,255,255,0.6);
+            box-shadow: 0 0 0 1px rgba(0,0,0,0.05) inset;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .ad-indicators button.active {
+            background: rgba(255,255,255,0.95);
+        }
+
+        /* Auf kleinen Bildschirmen die Sidebar ausblenden und padding entfernen */
+        @media (max-width: 900px) {
+            .ad-sidebar {
+                display: none;
+            }
+            body {
+                padding-right: 0;
+            }
+        }
+
+        /* Achtung für Bewegungsreduktion: Animationen ausschalten */
+        @media (prefers-reduced-motion: reduce) {
+            .ad-image {
+                transition: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -55,14 +140,84 @@
         <h1>Elefant Fanta unterstützt den Bau der Sagrada Família</h1>
         <div class="date">Barcelona, 15. Januar 2026</div>
         <img src="pics/fanta_parc.png" alt="Bild von Elefant Fanta bei der Arbeit">
-        <p>In einer überraschenden Wendung der Ereignisse hat ein Elefant namens Fanta begonnen, beim Bau der weltberühmten Sagrada Família in Barcelona zu helfen. Die Verantwortlichen des Projekts berichten, dass Fanta nicht nur für schwere Lasten eingesetzt wird, sondern auch für gute Stimmung auf der Baustelle sorgt.</p>
+        <p>In einer überraschenden Wendung der Ereignisse hat ein Elefant namens Fanta begonnen, beim Bau der weltberühmten Sagrada Família in Barcelona zu helfen. Die Verantwortlichen des Projekts[...]
         <img src="pics/fanta_bauhelm_von_hinten_blick_auf_sagrada.png" alt="Bild der Sagrada Família im Bau">
-        <p>„Es ist unglaublich, wie schnell sich Fanta eingearbeitet hat“, sagt ein Bauleiter. Der Elefant transportiert Materialien, hebt große Steinblöcke und zieht sogar Gerüste in Position. Touristen und Einheimische sind begeistert von dem ungewöhnlichen Helfer, der mittlerweile zu einer echten Attraktion geworden ist.</p>
-        <p>Die Bauarbeiten an der Sagrada Família dauern bereits seit über 140 Jahren. Mit Fantas Hilfe hoffen die Verantwortlichen, das Projekt schneller voranzubringen – und dabei ein Stück Geschichte mit einem Hauch von Tierliebe zu schreiben.</p>
+        <p>„Es ist unglaublich, wie schnell sich Fanta eingearbeitet hat“, sagt ein Bauleiter. Der Elefant transportiert Materialien, hebt große Steinblöcke und zieht sogar Gerüste in Position.[...]
+        <p>Die Bauarbeiten an der Sagrada Família dauern bereits seit über 140 Jahren. Mit Fantas Hilfe hoffen die Verantwortlichen, das Projekt schneller voranzubringen – und dabei ein Stück Ges[...]
     </article>
+
+    <!-- Sidebar Werbung -->
+    <aside class="ad-sidebar" aria-label="Werbung">
+        <div class="ad-container" role="region" aria-label="Wechselnde Werbung">
+            <img src="pics/apfelwerbung.png" alt="Apfel Werbung" class="ad-image visible" id="ad-0" />
+            <img src="pics/bauwerbung.png" alt="Bau Werbung" class="ad-image" id="ad-1" />
+            <div class="ad-indicators" aria-hidden="false">
+                <button aria-label="Werbung 1" class="active" data-index="0"></button>
+                <button aria-label="Werbung 2" data-index="1"></button>
+            </div>
+        </div>
+    </aside>
+
+    <script>
+        (function() {
+            // Einstellungen: Wechselintervall in Millisekunden (ca. 1 Minute)
+            var SWITCH_INTERVAL_MS = 60 * 1000; // 60000ms = 1 Minute
+            // Fade-Dauer in CSS ist 1.5s (im CSS oben)
+            var images = [
+                document.getElementById('ad-0'),
+                document.getElementById('ad-1')
+            ];
+            var indicators = document.querySelectorAll('.ad-indicators button');
+            var current = 0;
+            var timer = null;
+
+            function showIndex(idx) {
+                if (idx === current) return;
+                images[current].classList.remove('visible');
+                indicators[current].classList.remove('active');
+                images[idx].classList.add('visible');
+                indicators[idx].classList.add('active');
+                current = idx;
+            }
+
+            function next() {
+                var nextIdx = (current + 1) % images.length;
+                showIndex(nextIdx);
+            }
+
+            // Start Timer, aber nur wenn Animationen erlaubt sind
+            var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (!reduceMotion) {
+                timer = setInterval(next, SWITCH_INTERVAL_MS);
+            } else {
+                // Bei reduzierter Bewegung: kein automatischer Wechsel; lasse ersten sichtbar
+                console.log('prefers-reduced-motion: Wechsel deaktiviert');
+            }
+
+            // Indikator-Klicks: manuell wechseln und Timer zurücksetzen
+            indicators.forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    var idx = parseInt(btn.getAttribute('data-index'), 10);
+                    showIndex(idx);
+                    if (timer) {
+                        clearInterval(timer);
+                        timer = setInterval(next, SWITCH_INTERVAL_MS);
+                    }
+                });
+            });
+
+            // Optional: Pause bei Hover (nur wenn nicht reduced motion)
+            if (!reduceMotion) {
+                var adContainer = document.querySelector('.ad-container');
+                adContainer.addEventListener('mouseenter', function() {
+                    if (timer) clearInterval(timer);
+                });
+                adContainer.addEventListener('mouseleave', function() {
+                    if (timer) clearInterval(timer);
+                    timer = setInterval(next, SWITCH_INTERVAL_MS);
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
-
-
-
-
